@@ -13,6 +13,11 @@ typedef void (^translationCompletion)(NSString *result);
 @interface TranslationManager : NSObject
 
 + (id)sharedInstance;
-- (void)translate:(NSString *)str completion:(translationCompletion)completion;
+
+//中英互译
+- (void)translateCn2En:(NSString *)str completion:(translationCompletion)completion;
+
+//中日互译
+- (void)translateCn2Ja:(NSString *)str completion:(translationCompletion)completion;
 
 @end

@@ -13,7 +13,8 @@
 
 @interface TranslationManager ()
 
-@property (nonatomic, strong) NSMutableDictionary *transDic;
+@property (nonatomic, strong) NSMutableDictionary *transCn2EnDic;
+@property (nonatomic, strong) NSMutableDictionary *transCn2JaDic;
 @property (nonatomic, strong) dispatch_queue_t queue;
 @end
 
@@ -33,13 +34,14 @@
 {
     self = [super init];
     if (self) {
-        self.transDic = [NSMutableDictionary dictionary];
+        self.transCn2EnDic = [NSMutableDictionary dictionary];
+        self.transCn2JaDic = [NSMutableDictionary dictionary];
         self.queue = dispatch_queue_create("com.liunan.translation", NULL);
     }
     return self;
 }
 
-- (NSString *)translationURLWithContent:(NSString *)content
+- (NSString *)translationEn2CnURLWithContent:(NSString *)content
 {
     static NSArray *keyfromList = nil;
     static NSArray *apiKeyList = nil;
@@ -62,16 +64,15 @@
             content];
 }
 
-- (void)translate:(NSString *)str completion:(translationCompletion)completion
+- (NSString *)translationCn2JaURL
 {
-    if (str.length == 0) {
-        if (completion) {
-            completion(str);
-        }
-        return;
-    }
-    
-    TranslationInfo *info = self.transDic[str];
+    static NSString *requestURL = @"http://fanyi.youdao.com/translate?smartresult=dict&smartresult=rule&smartresult=ugc&sessionFrom=null";
+    return requestURL;
+}
+
+- (void)translateBetweenEnglishAndChinese:(NSString *)str completion:(translationCompletion)completion
+{
+    TranslationInfo *info = self.transCn2EnDic[str];
     if (info) {
         if (completion) {
             completion(info.translation);
@@ -87,7 +88,7 @@
     
     dispatch_async(self.queue, ^(void) {
         
-        NSString *requestURL = [self translationURLWithContent:str];
+        NSString *requestURL = [self translationEn2CnURLWithContent:str];
         requestURL = [requestURL stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
         
         AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
@@ -105,7 +106,7 @@
                 
                 dispatch_async(dispatch_get_main_queue(), ^(void){
                     if (info.translation) {
-                        self.transDic[str] = info;
+                        self.transCn2EnDic[str] = info;
                     }
                     if (completion) {
                         completion(info.translation);
@@ -130,6 +131,100 @@
             });
         }];
     });
+}
+
+- (void)translateBetweenJapanieseAndChinese:(NSString *)str completion:(translationCompletion)completion
+{
+    TranslationInfo *info = self.transCn2JaDic[str];
+    if (info) {
+        if (completion) {
+            completion(info.translation);
+        }
+        return;
+    }
+    
+    AFNetworkReachabilityStatus status = [Utils networkStatus];
+    if (status == AFNetworkReachabilityStatusNotReachable) {
+        [Utils showErrorPost:@"无可用网络"];
+        return;
+    }
+    
+    dispatch_async(self.queue, ^(void) {
+        
+        __block NSString *resultStr = nil;
+        NSString *requestURL = [self translationCn2JaURL];
+        NSDictionary *dic = @{@"type": @"ZH_CN2JA", @"doctype" : @"json", @"xmlVersion" : @"1.6", @"keyfrom" : @"fanyi.web", @"ue" : @"UTF-8", @"typoResult" : @"true"};
+        NSMutableDictionary *parameters = [NSMutableDictionary dictionaryWithDictionary:dic];
+        NSString *percentEscapesStr = str;//[str stringByAddingPercentEscapesUsingEncoding:NSUnicodeStringEncoding];
+        [parameters setValue:percentEscapesStr forKey:@"i"];
+        
+        AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+        [manager POST:requestURL parameters:parameters success:^(AFHTTPRequestOperation *operation, id response) {
+            NSDictionary *resultDic = response;
+            NSArray *translateResult = resultDic[@"translateResult"];
+            
+            if ([translateResult isKindOfClass:[NSArray class]] && translateResult.count > 0) {
+                id t = [translateResult firstObject];
+                if ([t isKindOfClass:[NSArray class]]) {
+                    NSArray *tArray = t;
+                    if (tArray.count > 0) {
+                        NSDictionary *dic = [tArray firstObject];
+                        resultStr = dic[@"tgt"];
+                    }
+                }
+                else if ([t isKindOfClass:[NSDictionary class]]) {
+                    NSDictionary *tDic = t;
+                    resultStr = tDic[@"tgt"];
+                }
+            }
+            
+            TranslationInfo *info = [[TranslationInfo alloc] init];
+            info.query = str;
+            info.translation = resultStr;
+            
+            dispatch_async(dispatch_get_main_queue(), ^(void){
+                
+                if (resultStr) {
+                    self.transCn2JaDic[str] = info;
+                }
+                
+                if (completion) {
+                    completion(resultStr);
+                }
+            });
+            return;
+        }
+              failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+                  NSLog(@"%@", error);
+                  if (completion) {
+                      completion(nil);
+                  }
+              }];
+        
+    });
+}
+
+- (void)translateCn2Ja:(NSString *)str completion:(translationCompletion)completion
+{
+    if (str.length == 0) {
+        if (completion) {
+            completion(str);
+        }
+        return;
+    }
+    
+    [self translateBetweenJapanieseAndChinese:str completion:completion];
+}
+
+- (void)translateCn2En:(NSString *)str completion:(translationCompletion)completion
+{
+    if (str.length == 0) {
+        if (completion) {
+            completion(str);
+        }
+        return;
+    }
+    [self translateBetweenEnglishAndChinese:str completion:completion];
 }
 
 @end

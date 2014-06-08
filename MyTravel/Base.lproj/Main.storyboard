@@ -22,7 +22,7 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" red="0.94574506328757002" green="0.84766751672804075" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <textInputTraits key="textInputTraits" autocorrectionType="no" returnKeyType="go" enablesReturnKeyAutomatically="YES"/>
+                                <textInputTraits key="textInputTraits" autocorrectionType="no" returnKeyType="done" enablesReturnKeyAutomatically="YES"/>
                             </textView>
                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2w5-FU-auJ">
                                 <rect key="frame" x="33" y="173" width="255" height="80"/>
@@ -32,14 +32,25 @@
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nkh-yh-ZcV">
-                                <rect key="frame" x="33" y="135" width="46" height="30"/>
+                                <rect key="frame" x="33" y="135" width="70" height="30"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <accessibility key="accessibilityConfiguration" label="xxx"/>
-                                <state key="normal" title="翻译">
+                                <state key="normal" title="中英互译">
                                     <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
                                 </state>
                                 <connections>
-                                    <action selector="onTouchTranslationBtn:" destination="51p-vv-GCT" eventType="touchUpInside" id="DU2-YT-W8H"/>
+                                    <action selector="onTouchCn2EnBtn:" destination="51p-vv-GCT" eventType="touchUpInside" id="pSI-lf-Cmg"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ojM-Ap-UuJ">
+                                <rect key="frame" x="218" y="135" width="70" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <accessibility key="accessibilityConfiguration" label="xxx"/>
+                                <state key="normal" title="中日互译">
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="onTouchCn2JaBtn:" destination="51p-vv-GCT" eventType="touchUpInside" id="tGL-PV-cgU"/>
                                 </connections>
                             </button>
                         </subviews>
@@ -47,9 +58,10 @@
                     </view>
                     <tabBarItem key="tabBarItem" title="翻译" id="lpO-qh-xfJ"/>
                     <connections>
+                        <outlet property="cn2enBtn" destination="nkh-yh-ZcV" id="blQ-N6-f3a"/>
+                        <outlet property="cn2jaBtn" destination="ojM-Ap-UuJ" id="z4B-NJ-DWI"/>
                         <outlet property="inputTextView" destination="dW8-Gu-9p9" id="uk2-qt-7CY"/>
                         <outlet property="outputTextView" destination="2w5-FU-auJ" id="58K-LD-jPO"/>
-                        <outlet property="translationBtn" destination="nkh-yh-ZcV" id="hUD-hL-F2k"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="puQ-u6-E37" userLabel="First Responder" sceneMemberID="firstResponder"/>
