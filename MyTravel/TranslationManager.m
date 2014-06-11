@@ -11,11 +11,13 @@
 #import "AFHTTPRequestOperationManager.h"
 #import "Utils.h"
 
-@interface TranslationManager ()
+@interface TranslationManager () <NSXMLParserDelegate>
 
 @property (nonatomic, strong) NSMutableDictionary *transCn2EnDic;
 @property (nonatomic, strong) NSMutableDictionary *transCn2JaDic;
 @property (nonatomic, strong) dispatch_queue_t queue;
+
+@property (nonatomic, strong) NSMutableString *resultString;
 @end
 
 @implementation TranslationManager
@@ -37,6 +39,7 @@
         self.transCn2EnDic = [NSMutableDictionary dictionary];
         self.transCn2JaDic = [NSMutableDictionary dictionary];
         self.queue = dispatch_queue_create("com.liunan.translation", NULL);
+        self.resultString = [[NSMutableString alloc] init];
     }
     return self;
 }
@@ -155,8 +158,12 @@
         NSString *requestURL = [self translationCn2JaURL];
         NSDictionary *dic = @{@"type": @"ZH_CN2JA", @"doctype" : @"json", @"xmlVersion" : @"1.6", @"keyfrom" : @"fanyi.web", @"ue" : @"UTF-8", @"typoResult" : @"true"};
         NSMutableDictionary *parameters = [NSMutableDictionary dictionaryWithDictionary:dic];
-        NSString *percentEscapesStr = str;//[str stringByAddingPercentEscapesUsingEncoding:NSUnicodeStringEncoding];
-        [parameters setValue:percentEscapesStr forKey:@"i"];
+        NSString *targetStr = [self unescape:[str UTF8String]];
+        
+        NSCAssert(targetStr, @"targetStr is nil!");
+        if (targetStr) {
+            [parameters setValue:targetStr forKey:@"i"];
+        }
         
         AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
         [manager POST:requestURL parameters:parameters success:^(AFHTTPRequestOperation *operation, id response) {
@@ -204,6 +211,97 @@
     });
 }
 
+- (void)parser:(NSXMLParser *)parser foundCharacters:(NSString *)s {
+    [self.resultString appendString:s];
+}
+
+
+- (NSString *)unescape:(const char *)str
+{
+    NSMutableString *writer = [[NSMutableString alloc] init];
+    int sz = strlen(str);
+    NSMutableString *unicode = [[NSMutableString alloc] init];
+    BOOL hadSlash = false;
+    BOOL inUnicode = false;
+    
+    for (int i = 0; i < sz; i++)
+    {
+        char ch = str[i];
+        if (inUnicode)
+        {
+            [unicode appendString:[NSString stringWithFormat:@"%c", ch]];
+            if (unicode.length == 4)
+            {
+                // unicode now contains the four hex digits
+                // which represents our unicode character
+                int value = [unicode intValue];
+                char valueChar = (char)value;
+                [writer appendString:[NSString stringWithFormat:@"%c", valueChar]];
+                [unicode setString:@""];
+                inUnicode = false;
+                hadSlash = false;
+            }
+            continue;
+        }
+        
+        if (hadSlash)
+        {
+            // handle an escaped value
+            hadSlash = false;
+            switch (ch)
+            {
+                case '\\':
+                    [writer appendString:@"\\"];
+                    break;
+                case '\'':
+                    [writer appendString:@"'"];
+                    break;
+                case '\"':
+                    [writer appendString:@"\""];
+                    break;
+                case 'r':
+                    [writer appendString:@"\r"];
+                    break;
+                case 'f':
+                    [writer appendString:@"\f"];
+                    break;
+                case 't':
+                    [writer appendString:@"\t"];
+                    break;
+                case 'n':
+                    [writer appendString:@"\n"];
+                    break;
+                case 'b':
+                    [writer appendString:@"\b"];
+                    break;
+                case 'u':
+                    // uh-oh, we're in unicode country....
+                    inUnicode = true;
+                    break;
+                default:
+                    [writer appendString:[NSString stringWithFormat:@"%c", ch]];
+                    break;
+            }
+            continue;
+        }
+        else if (ch == '\\')
+        {
+            hadSlash = true;
+            continue;
+        }
+        [writer appendString:[NSString stringWithFormat:@"%c", ch]];
+    }
+    
+    if (hadSlash)
+    {
+        // then we're in the weird case of a \ at the end of the
+        // string, let's output it anyway.
+        [writer appendString:@"\\"];
+    }
+    
+    return writer;
+}
+
 - (void)translateCn2Ja:(NSString *)str completion:(translationCompletion)completion
 {
     if (str.length == 0) {
@@ -226,5 +324,7 @@
     }
     [self translateBetweenEnglishAndChinese:str completion:completion];
 }
+
+
 
 @end
