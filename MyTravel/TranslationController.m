@@ -11,14 +11,12 @@
 
 @interface TranslationController () <UITextViewDelegate>
 
-@property (weak, nonatomic) IBOutlet UIButton *cn2jaBtn;
-@property (weak, nonatomic) IBOutlet UIButton *cn2enBtn;
+@property (strong, nonatomic) IBOutletCollection(UIButton) NSArray *translateBtns;
 
 @property (weak, nonatomic) IBOutlet UITextView *outputTextView;
 @property (weak, nonatomic) IBOutlet UITextView *inputTextView;
 
-- (IBAction)onTouchCn2JaBtn:(id)sender;
-- (IBAction)onTouchCn2EnBtn:(id)sender;
+- (IBAction)translateAction:(id)sender;
 @end
 
 @implementation TranslationController
@@ -65,31 +63,21 @@
     return YES;
 }
 
-- (IBAction)onTouchCn2EnBtn:(id)sender
+- (IBAction)translateAction:(id)sender
 {
     NSString *inputText = self.inputTextView.text;
-    [self.inputTextView resignFirstResponder];
-    self.cn2enBtn.enabled = NO;
-    self.cn2jaBtn.enabled = NO;
+    TranslationType type = [(UIButton *)sender tag];
+    for (UIButton *btn in self.translateBtns)
+    {
+        btn.enabled = NO;
+    }
     
-    [[TranslationManager sharedInstance] translateCn2En:inputText completion:^(NSString *output) {
+    [[TranslationManager sharedInstance] translate:inputText type:type completion:^(NSString *output) {
         self.outputTextView.text = output;
-        self.cn2enBtn.enabled = YES;
-        self.cn2jaBtn.enabled = YES;
-    }];
-}
-
-- (IBAction)onTouchCn2JaBtn:(id)sender
-{
-    NSString *inputText = self.inputTextView.text;
-    [self.inputTextView resignFirstResponder];
-    self.cn2enBtn.enabled = NO;
-    self.cn2jaBtn.enabled = NO;
-    
-    [[TranslationManager sharedInstance] translateCn2Ja:inputText completion:^(NSString *output) {
-        self.outputTextView.text = output;
-        self.cn2enBtn.enabled = YES;
-        self.cn2jaBtn.enabled = YES;
+        for (UIButton *btn in self.translateBtns)
+        {
+            btn.enabled = YES;
+        }
     }];
 }
 

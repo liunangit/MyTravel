@@ -10,14 +10,16 @@
 
 typedef void (^translationCompletion)(NSString *result);
 
+typedef enum {
+    TranslationTypeCn2En,   //中英互译
+    TranslationTypeCn2Ja,
+    TranslationTypeJa2Cn
+}TranslationType;
+
 @interface TranslationManager : NSObject
 
 + (id)sharedInstance;
 
-//中英互译
-- (void)translateCn2En:(NSString *)str completion:(translationCompletion)completion;
-
-//中日互译
-- (void)translateCn2Ja:(NSString *)str completion:(translationCompletion)completion;
+- (void)translate:(NSString *)str type:(TranslationType)type completion:(translationCompletion)completion;
 
 @end

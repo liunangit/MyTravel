@@ -96,7 +96,7 @@
         
         AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
         [manager GET:requestURL parameters:nil success:^(AFHTTPRequestOperation *operation, id responseObject) {
-            NSLog(@"Translation: %@", responseObject);
+            NSLog(@"translateBetweenEnglishAndChinese responseObject: %@", responseObject);
             if ([responseObject isKindOfClass:[NSDictionary class]]) {
                 
                 NSDictionary *responseDic = responseObject;
@@ -136,7 +136,7 @@
     });
 }
 
-- (void)translateBetweenJapanieseAndChinese:(NSString *)str completion:(translationCompletion)completion
+- (void)translateBetweenJapanieseAndChinese:(NSString *)str type:(NSString *)type completion:(translationCompletion)completion
 {
     TranslationInfo *info = self.transCn2JaDic[str];
     if (info) {
@@ -156,7 +156,8 @@
         
         __block NSString *resultStr = nil;
         NSString *requestURL = [self translationCn2JaURL];
-        NSDictionary *dic = @{@"type": @"ZH_CN2JA", @"doctype" : @"json", @"xmlVersion" : @"1.6", @"keyfrom" : @"fanyi.web", @"ue" : @"UTF-8", @"typoResult" : @"true"};
+        //@"ZH_CN2JA"
+        NSDictionary *dic = @{@"type": type, @"doctype" : @"json", @"xmlVersion" : @"1.6", @"keyfrom" : @"fanyi.web", @"ue" : @"UTF-8", @"typoResult" : @"true"};
         NSMutableDictionary *parameters = [NSMutableDictionary dictionaryWithDictionary:dic];
         NSString *targetStr = [self unescape:[str UTF8String]];
         
@@ -167,6 +168,7 @@
         
         AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
         [manager POST:requestURL parameters:parameters success:^(AFHTTPRequestOperation *operation, id response) {
+            NSLog(@"translateBetweenJapanieseAndChinese responseObject: %@", response);
             NSDictionary *resultDic = response;
             NSArray *translateResult = resultDic[@"translateResult"];
             
@@ -302,7 +304,7 @@
     return writer;
 }
 
-- (void)translateCn2Ja:(NSString *)str completion:(translationCompletion)completion
+- (void)translate:(NSString *)str type:(TranslationType)type completion:(translationCompletion)completion
 {
     if (str.length == 0) {
         if (completion) {
@@ -311,18 +313,24 @@
         return;
     }
     
-    [self translateBetweenJapanieseAndChinese:str completion:completion];
-}
-
-- (void)translateCn2En:(NSString *)str completion:(translationCompletion)completion
-{
-    if (str.length == 0) {
-        if (completion) {
-            completion(str);
-        }
-        return;
+    switch (type)
+    {
+        case TranslationTypeCn2En:
+            [self translateBetweenEnglishAndChinese:str completion:completion];
+            break;
+            
+        case TranslationTypeCn2Ja:
+            [self translateBetweenJapanieseAndChinese:str type:@"ZH_CN2JA" completion:completion];
+            break;
+            
+        case TranslationTypeJa2Cn:
+            [self translateBetweenJapanieseAndChinese:str type:@"JA2ZH_CN" completion:completion];
+            break;
+            
+        default:
+            [self translateBetweenEnglishAndChinese:str completion:completion];
+            break;
     }
-    [self translateBetweenEnglishAndChinese:str completion:completion];
 }
 
 
